@@ -78,11 +78,9 @@ jobs:
         working-directory: ./demo
 
       - name: Run OWASP ZAP Baseline Scan
-        uses: zaproxy/action-baseline@v0.7.0
+        uses: zaproxy/action-baseline@v0.13.0
         with:
-          token: ${{ secrets.GITHUB_TOKEN }}
           target: "http://localhost:8080"
-          rules_file: ".github/zap/rules.tsv"
 
       - name: Stop the application
         run: kill $(cat pid.txt)
