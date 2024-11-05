@@ -61,7 +61,6 @@ jobs:
           token: ${{ secrets.SONAR_TOKEN }}
         env:
           GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        working-directory: ./demo
 
   dast:
     name: Dynamic Application Security Testing
