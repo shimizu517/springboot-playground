@@ -17,7 +17,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Run truffleHog
-        uses: trufflesecurity/trufflehog@v3
+        uses: trufflesecurity/trufflehog@v3.8.0
         with:
           scan: "repo"
           github_token: ${{ secrets.GITHUB_TOKEN }}
@@ -51,6 +51,7 @@ jobs:
 
       - name: Install Maven dependencies
         run: ./mvnw dependency:go-offline
+        working-directory: ./demo
 
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-action@v1.9
@@ -58,6 +59,9 @@ jobs:
           projectKey: your_project_key
           organization: your_organization
           token: ${{ secrets.SONAR_TOKEN }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        working-directory: ./demo
 
   dast:
     name: Dynamic Application Security Testing
@@ -74,6 +78,7 @@ jobs:
 
       - name: Build the application
         run: ./mvnw package
+        working-directory: ./demo
 
       - name: Start the application
         run: |
@@ -81,6 +86,7 @@ jobs:
           echo $! > pid.txt
         env:
           SPRING_PROFILES_ACTIVE: test
+        working-directory: ./demo
 
       - name: Run OWASP ZAP Baseline Scan
         uses: zaproxy/action-baseline@v0.7.0
@@ -91,3 +97,4 @@ jobs:
 
       - name: Stop the application
         run: kill $(cat pid.txt)
+        working-directory: ./demo
