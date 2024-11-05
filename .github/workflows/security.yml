@@ -35,31 +35,22 @@ jobs:
           distribution: "adopt"
 
       - name: Cache SonarCloud packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
           path: ~/.sonar/cache
           key: ${{ runner.os }}-sonar
-
+          restore-keys: ${{ runner.os }}-sonar
       - name: Cache Maven packages
-        uses: actions/cache@v3
+        uses: actions/cache@v4
         with:
-          path: ~/.m2/repository
-          key: ${{ runner.os }}-maven-${{ hashFiles('**/pom.xml') }}
-          restore-keys: |
-            ${{ runner.os }}-maven-
-
-      - name: Install Maven dependencies
-        run: ./mvnw dependency:go-offline
-        working-directory: ./demo
-
-      - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v1.9
-        with:
-          projectKey: your_project_key
-          organization: your_organization
-          token: ${{ secrets.SONAR_TOKEN }}
+          path: ~/.m2
+          key: ${{ runner.os }}-m2-${{ hashFiles('**/pom.xml') }}
+          restore-keys: ${{ runner.os }}-m2
+      - name: Build and analyze
         env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }} # Needed to get PR information, if any
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=shimizu517_springboot-playground
 
   dast:
     name: Dynamic Application Security Testing
