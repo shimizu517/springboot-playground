@@ -56,8 +56,8 @@ jobs:
         run: mvn -B verify org.sonarsource.scanner.maven:sonar-maven-plugin:sonar -Dsonar.projectKey=shimizu517_springboot-playground
         working-directory: ./demo
 
-  dast:
-    name: Dynamic Application Security Testing
+  build-docker:
+    name: Build Docker Image
     runs-on: ubuntu-latest
     steps:
       - name: Checkout code
@@ -70,8 +70,33 @@ jobs:
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
       - name: Build Docker image
-        run: docker build -t my-spring-boot-app .
+        run: docker build -t my-spring-boot-app -f ./Dockerfile ./demo/
         working-directory: ./demo
+
+      - name: Save Docker image to file
+        run: docker save my-spring-boot-app -o my-spring-boot-app.tar
+
+      - name: Upload Docker image as artifact
+        uses: actions/upload-artifact@v3
+        with:
+          name: my-spring-boot-app
+          path: my-spring-boot-app.tar
+
+  dast:
+    name: Dynamic Application Security Testing
+    runs-on: ubuntu-latest
+    needs: build-docker
+    steps:
+      - name: Checkout code
+        uses: actions/checkout@v3
+
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: my-spring-boot-app
+
+      - name: Load Docker image from file
+        run: docker load -i my-spring-boot-app.tar
 
       - name: Start the application
         run: |
@@ -90,8 +115,8 @@ jobs:
       - name: Stop the application
         run: docker stop my-spring-boot-app && docker rm my-spring-boot-app
 
-  docker:
-    name: Build and Push Docker Image
+  push-docker:
+    name: Push Docker Image
     runs-on: ubuntu-latest
     needs: [credentials-detection, sast, dast]
     if: github.ref == 'refs/heads/main'
@@ -99,12 +124,19 @@ jobs:
       - name: Checkout code
         uses: actions/checkout@v3
 
+      - name: Download Docker image artifact
+        uses: actions/download-artifact@v3
+        with:
+          name: my-spring-boot-app
+
+      - name: Load Docker image from file
+        run: docker load -i my-spring-boot-app.tar
+
       - name: Log in to Docker Hub
         run: echo "${{ secrets.DOCKER_PASSWORD }}" | docker login -u "${{ secrets.DOCKER_USERNAME }}" --password-stdin
 
-      - name: Build Docker image
-        run: docker build -t ${{ secrets.DOCKER_USERNAME }}/springboot-playground:latest .
-        working-directory: ./demo
+      - name: Tag Docker image
+        run: docker tag my-spring-boot-app ${{ secrets.DOCKER_USERNAME }}/springboot-playground:latest
 
       - name: Push Docker image
         run: docker push ${{ secrets.DOCKER_USERNAME }}/springboot-playground:latest
