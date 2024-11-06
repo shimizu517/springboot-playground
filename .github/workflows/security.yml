@@ -71,7 +71,6 @@ jobs:
 
       - name: Build Docker image
         run: docker build -t my-spring-boot-app -f ./Dockerfile ./demo/
-        working-directory: ./demo
 
       - name: Save Docker image to file
         run: docker save my-spring-boot-app -o my-spring-boot-app.tar
